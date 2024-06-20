@@ -49,8 +49,8 @@ jobs:
       - name: Deploy to Elastic Beanstalk
         env:
           AWS_REGION: ap-northeast-2
-          APPLICATION_NAME: cicd-test-beanstalk
-          ENVIRONMENT_NAME: Cicd-test-beanstalk-env
+          APPLICATION_NAME: beanstalk-cicid-test
+          ENVIRONMENT_NAME: Beanstalk-cicid-test-env
           VERSION_LABEL: github-actions-${{ github.sha }}
           S3_BUCKET: elasticbeanstalk-ap-northeast-2-381492019209
         run: |
