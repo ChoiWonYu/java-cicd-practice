@@ -45,3 +45,25 @@ jobs:
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Deploy to Elastic Beanstalk
+        env:
+          AWS_REGION: ap-northeast-2
+          APPLICATION_NAME: cicd-test-beanstalk
+          ENVIRONMENT_NAME: Cicd-test-beanstalk-env
+          VERSION_LABEL: github-actions-${{ github.sha }}
+          S3_BUCKET: elasticbeanstalk-ap-northeast-2-381492019209
+        run: |
+          echo "version: 1
+          containerDefinitions:
+            - name: web
+              image: ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+              essential: true
+              memory: 512
+              portMappings:
+                - containerPort: 8080
+                  hostPort: 8080" > Dockerrun.aws.json
+          zip -r deploy.zip Dockerrun.aws.json
+          aws s3 cp deploy.zip s3://$S3_BUCKET/deploy.zip
+          aws elasticbeanstalk create-application-version --application-name $APPLICATION_NAME --version-label $VERSION_LABEL --source-bundle S3Bucket=$S3_BUCKET,S3Key=deploy.zip --region $AWS_REGION
+          aws elasticbeanstalk update-environment --environment-name $ENVIRONMENT_NAME --version-label $VERSION_LABEL --region $AWS_REGION
