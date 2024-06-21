@@ -68,7 +68,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-northeast-2
         run: |
-          aws s3 cp Dockerrun.aws.json s3://$AWS_S3_BUCKET-${{ github.sha }}.aws.json
+          aws s3 cp Dockerrun.aws.json s3://$AWS_S3_BUCKET/Dockerrun-${{ github.sha }}.aws.json
 
 #      - name: Deploy to Elastic Beanstalk
 #        env:
