@@ -8,6 +8,7 @@ on:
 env:
   ECR_REGISTRY: ${{ secrets.AWS_DEV_ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.AWS_DEV_ECR_REPOSITORY }}
+  AWS_S3_BUCKET: ${{ secrets.AWS_DEV_S3_BUCKET }}
 
 jobs:
   build_and_push:
@@ -67,7 +68,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-northeast-2
         run: |
-          aws s3 cp Dockerrun.aws.json s3://your-s3-bucket/Dockerrun-${{ github.sha }}.aws.json
+          aws s3 cp Dockerrun.aws.json s3://$AWS_S3_BUCKET-${{ github.sha }}.aws.json
 
 #      - name: Deploy to Elastic Beanstalk
 #        env:
