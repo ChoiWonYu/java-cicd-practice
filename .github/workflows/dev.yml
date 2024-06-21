@@ -27,6 +27,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
@@ -70,11 +78,11 @@ jobs:
         run: |
           aws s3 cp Dockerrun.aws.json s3://$AWS_S3_BUCKET/Dockerrun-${{ github.sha }}.aws.json
 
-      - name: Deploy to Elastic Beanstalk
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-northeast-2
-        run: |
-          aws elasticbeanstalk create-application-version --application-name last-cicd-test --version-label ${{ github.sha }} --source-bundle S3Bucket=$AWS_S3_BUCKET,S3Key="Dockerrun-${{ github.sha }}.aws.json"
-          aws elasticbeanstalk update-environment --application-name last-cicd-test --environment-name Last-cicd-test-env --version-label ${{ github.sha }}
+#      - name: Deploy to Elastic Beanstalk
+#        env:
+#          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          AWS_REGION: ap-northeast-2
+#        run: |
+#          aws elasticbeanstalk create-application-version --application-name last-cicd-test --version-label ${{ github.sha }} --source-bundle S3Bucket=$AWS_S3_BUCKET,S3Key="Dockerrun-${{ github.sha }}.aws.json"
+#          aws elasticbeanstalk update-environment --application-name last-cicd-test --environment-name Last-cicd-test-env --version-label ${{ github.sha }}
