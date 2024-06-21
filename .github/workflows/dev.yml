@@ -70,27 +70,11 @@ jobs:
         run: |
           aws s3 cp Dockerrun.aws.json s3://$AWS_S3_BUCKET/Dockerrun-${{ github.sha }}.aws.json
 
-#      - name: Deploy to Elastic Beanstalk
-#        env:
-#          AWS_REGION: ap-northeast-2
-#          APPLICATION_NAME: cicd-test-application
-#          ENVIRONMENT_NAME: Cicd-test-application-env
-#          VERSION_LABEL: github-actions-${{ github.sha }}
-#          S3_BUCKET: elasticbeanstalk-ap-northeast-2-381492019209
-#          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-#          ECR_REPOSITORY: cicd-test
-#          IMAGE_TAG: latest
-#        run: |
-#          echo "version: 1
-#          containerDefinitions:
-#            - name: web
-#              image: ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
-#              essential: true
-#              memory: 512
-#              portMappings:
-#                - containerPort: 8080
-#                  hostPort: 8080" > Dockerrun.aws.json
-#          zip -r deploy.zip Dockerrun.aws.json
-#          aws s3 cp deploy.zip s3://$S3_BUCKET/deploy.zip
-#          aws elasticbeanstalk create-application-version --application-name $APPLICATION_NAME --version-label $VERSION_LABEL --source-bundle S3Bucket=$S3_BUCKET,S3Key=deploy.zip --region $AWS_REGION
-#          aws elasticbeanstalk update-environment --environment-name $ENVIRONMENT_NAME --version-label $VERSION_LABEL --region $AWS_REGION
+      - name: Deploy to Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-northeast-2
+        run: |
+          aws elasticbeanstalk create-application-version --application-name last-cicd-test --version-label ${{ github.sha }} --source-bundle S3Bucket=$AWS_S3_BUCKET,S3Key="Dockerrun-'${{ github.sha }}'.aws.json"
+          aws elasticbeanstalk update-environment --application-name last-cicd-test --environment-name Last-cicd-test-env --version-label ${{ github.sha }}
