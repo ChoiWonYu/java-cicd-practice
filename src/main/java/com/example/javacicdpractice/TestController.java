@@ -15,6 +15,6 @@ public class TestController {
 
     @GetMapping("/test")
     public String test() {
-        return "common var: " + appName + "\ntest var: " + testVariable;
+        return "common var: " + appName + "\ntest var: " + testVariable + "\n test change!";
     }
 }
