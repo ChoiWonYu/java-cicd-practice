@@ -6,9 +6,8 @@ on:
       - dev
 
 env:
-  ECR_REGISTRY: ${{ secrets.AWS_DEV_ECR_REGISTRY }}
+  ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.AWS_DEV_ECR_REPOSITORY }}
-  AWS_S3_BUCKET: ${{ secrets.AWS_DEV_S3_BUCKET }}
 
 jobs:
   build_and_push:
@@ -52,37 +51,4 @@ jobs:
       - name: Build, tag, and push Docker image to Amazon ECR
         run: |
           docker build -t $ECR_REPOSITORY:latest .
-          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Create Dockerrun.aws.json file
-        run: |
-          echo '{
-            "AWSEBDockerrunVersion": "1",
-            "Image": {
-              "Name": "'$ECR_REGISTRY'/'$ECR_REPOSITORY':latest",
-              "Update": "true"
-            },
-            "Ports": [
-              {
-                "ContainerPort": "8080"
-              }
-            ]
-          }' > Dockerrun.aws.json
-
-      - name: Upload Dockerrun.aws.json to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-northeast-2
-        run: |
-          aws s3 cp Dockerrun.aws.json s3://$AWS_S3_BUCKET/Dockerrun-${{ github.sha }}.aws.json
-
-#      - name: Deploy to Elastic Beanstalk
-#        env:
-#          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#          AWS_REGION: ap-northeast-2
-#        run: |
-#          aws elasticbeanstalk create-application-version --application-name last-cicd-test --version-label ${{ github.sha }} --source-bundle S3Bucket=$AWS_S3_BUCKET,S3Key="Dockerrun-${{ github.sha }}.aws.json"
-#          aws elasticbeanstalk update-environment --application-name last-cicd-test --environment-name Last-cicd-test-env --version-label ${{ github.sha }}
