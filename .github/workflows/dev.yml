@@ -10,7 +10,7 @@ env:
   ECR_REPOSITORY: ${{ secrets.AWS_DEV_ECR_REPOSITORY }}
 
 jobs:
-  build_and_push:
+  build_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -52,3 +52,26 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYYMMDD_HH-mm-ss
+          utcOffset: "+09:00"
+
+      - name: Replace environment variables in Dockerrun.aws.json
+        run: |
+          sed -i "s|\${ECR_REGISTRY}|${{ env.ECR_REGISTRY }}|g" environment/dev/Dockerrun.aws.json
+          sed -i "s|\${ECR_REPOSITORY}|${{ env.ECR_REPOSITORY }}|g" environment/dev/Dockerrun.aws.json
+
+      - name: Beanstalk Deploy
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: test-dev-eb
+          environment_name: Test-dev-eb-env
+          version_label: test-dev-${{steps.current-time.outputs.formattedTime}}
+          region: ap-northeast-2
+          deployment_package: environment/dev/Dockerrun.aws.json
