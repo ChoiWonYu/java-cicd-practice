@@ -5,7 +5,7 @@ RUN gradle dependencies --no-daemon
 COPY . /app
 RUN gradle clean build --no-daemon
 
-FROM openjdk:11-jre-slim
+FROM openjdk:17-jre-slim
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar /app/app.jar
 EXPOSE 8080
