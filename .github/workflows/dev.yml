@@ -6,12 +6,11 @@ on:
       - dev
 
 env:
-  ECR_REGISTRY: ${{ secrets.AWS_DEV_ECR_REGISTRY }}
+  ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.AWS_DEV_ECR_REPOSITORY }}
-  AWS_S3_BUCKET: ${{ secrets.AWS_DEV_S3_BUCKET }}
 
 jobs:
-  build_and_push:
+  build_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -51,38 +50,28 @@ jobs:
 
       - name: Build, tag, and push Docker image to Amazon ECR
         run: |
-          docker build -t $ECR_REPOSITORY:latest .
-          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Create Dockerrun.aws.json file
-        run: |
-          echo '{
-            "AWSEBDockerrunVersion": "1",
-            "Image": {
-              "Name": "'$ECR_REGISTRY'/'$ECR_REPOSITORY':latest",
-              "Update": "true"
-            },
-            "Ports": [
-              {
-                "ContainerPort": "8080"
-              }
-            ]
-          }' > Dockerrun.aws.json
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYYMMDD_HH-mm-ss
+          utcOffset: "+09:00"
 
-      - name: Upload Dockerrun.aws.json to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-northeast-2
+      - name: Replace environment variables in Dockerrun.aws.json
         run: |
-          aws s3 cp Dockerrun.aws.json s3://$AWS_S3_BUCKET/Dockerrun-${{ github.sha }}.aws.json
+          sed -i "s|\${ECR_REGISTRY}|${{ env.ECR_REGISTRY }}|g" environment/dev/Dockerrun.aws.json
+          sed -i "s|\${ECR_REPOSITORY}|${{ env.ECR_REPOSITORY }}|g" environment/dev/Dockerrun.aws.json
 
-#      - name: Deploy to Elastic Beanstalk
-#        env:
-#          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#          AWS_REGION: ap-northeast-2
-#        run: |
-#          aws elasticbeanstalk create-application-version --application-name last-cicd-test --version-label ${{ github.sha }} --source-bundle S3Bucket=$AWS_S3_BUCKET,S3Key="Dockerrun-${{ github.sha }}.aws.json"
-#          aws elasticbeanstalk update-environment --application-name last-cicd-test --environment-name Last-cicd-test-env --version-label ${{ github.sha }}
+      - name: Beanstalk Deploy
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: test-dev-eb
+          environment_name: Test-dev-eb-env
+          version_label: test-dev-${{steps.current-time.outputs.formattedTime}}
+          region: ap-northeast-2
+          deployment_package: environment/dev/Dockerrun.aws.json
