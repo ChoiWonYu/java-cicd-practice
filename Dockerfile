@@ -1,12 +1,13 @@
-FROM openjdk:17-jdk-slim
+FROM gradle:7.6.1-jdk11 AS build
+WORKDIR /app
+COPY build.gradle settings.gradle ./
+RUN gradle dependencies --no-daemon
+COPY . /app
+RUN gradle clean build --no-daemon
 
-ARG JAR_FILE=build/libs/*.jar
-COPY ${JAR_FILE} app.jar
-
-ENV SPRING_PROFILES_ACTIVE=prod
-
+FROM openjdk:11-jre-slim
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar /app/app.jar
 EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "/app.jar"]
-
-CMD ["--spring.profiles.active=${SPRING_PROFILES_ACTIVE}"]
+ENTRYPOINT ["java"]
+CMD ["-jar", "app.jar"]
