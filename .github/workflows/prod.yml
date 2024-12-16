@@ -40,6 +40,12 @@ jobs:
           format: YYYYMMDD_HH-mm-ss
           utcOffset: "+09:00"
 
+      - name: Update Dockerrun.aws.json
+        run: |
+          sed -i "s|{{ECR_REGISTRY}}|${{ env.ECR_REGISTRY }}|g" environment/prod/Dockerrun.aws.json
+          sed -i "s|{{ECR_REPOSITORY}}|${{ env.ECR_REPOSITORY }}|g" environment/prod/Dockerrun.aws.json
+          sed -i "s|{{IMAGE_TAG}}|${{ env.IMAGE_TAG }}|g" environment/prod/Dockerrun.aws.json
+
       - name: Beanstalk Deploy
         uses: einaregilsson/beanstalk-deploy@v22
         with:
